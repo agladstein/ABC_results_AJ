@@ -1,2 +1,3 @@
 .idea/
-.vagrant/
+.vagrant/genome_test/.ipynb_checkpoints/
+genome_test/.ipynb_checkpoints
