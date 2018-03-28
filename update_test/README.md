@@ -6,8 +6,8 @@ rsynced results directory to Atmosphere instance.
 Use the run_plot_join.sh script to run plot_joint.py on all ABC results.
 
 ```
-cd /vol_c/ABC_update
-/vol_c/test_update/SimPrily_update/update_test/run_plot_join.sh
+cd /vol_c/src/ABC_results_AJ
+seq 1 100 | parallel -j 4 update_test/run_plot_join.sh {}
 ```
 
 plot_joint.py takes 3 arguments, 
