@@ -17,3 +17,11 @@ plot_joint.py takes 3 arguments,
 1. the joint posterior file
 2. the marginal posterior characteristics file
 3. the results_param_observed.txt file
+
+
+### 2. Combine all ABC marginal posterior characteristics files and marginal posterior density files.
+Use the script combine_results.py.
+
+```
+python genome_test/combine_results.py
+```
