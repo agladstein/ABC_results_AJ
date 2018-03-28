@@ -19,6 +19,12 @@ sudo apt-get install python3-pip
 sudo pip3 install virtualenv
 cd ~
 virtualenv -p /usr/bin/python3.6 env_python3.6
+source ~/env_python3.6/bin/activate
+pip install --upgrade pip
+pip install pip-tools
+cd /vagrant
+pip-sync
+
 cd /vagrant
 
 echo ""
