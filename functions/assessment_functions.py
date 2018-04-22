@@ -82,6 +82,28 @@ def get_results_files(outputPrefix):
             MarginalPosteriorCharacteristics_reformat_name,
             modelFit_name]
 
+def get_results_files_reducedParams(outputPrefix):
+    """
+    Define names of ABCtoolbox estimate results files
+    :param outputPrefix: the output prefix provided in the ABCtoolbox config file
+    :return: names of ABCtoolbox output files
+    """
+
+    BestSimsParamStats_name = '{}model0_BestSimsParamStats_Obs0.txt'.format(outputPrefix)
+    MarginalPosteriorDensities_name = '{}model0_MarginalPosteriorDensities_Obs0.txt'.format(outputPrefix)
+    MarginalPosteriorCharacteristics_name = '{}model0_MarginalPosteriorCharacteristics.txt'.format(outputPrefix)
+    jointPosterior_name = '{}model0_jointPosterior_1_2_Obs0.txt'.format(outputPrefix)
+    MarginalPosteriorCharacteristics_reformat_name = '{}model0_MarginalPosteriorCharacteristicsReformat.txt'.format(
+        outputPrefix)
+    modelFit_name = '{}modelFit.txt'.format(outputPrefix)
+
+    return [BestSimsParamStats_name,
+            MarginalPosteriorDensities_name,
+            MarginalPosteriorCharacteristics_name,
+            jointPosterior_name,
+            MarginalPosteriorCharacteristics_reformat_name,
+            modelFit_name]
+
 
 def get_modelchocie_files(outputPrefix):
     """
@@ -150,9 +172,12 @@ def get_param_indexes(params_str):
     param_indexes = []
     ranges = params_str.split(',')
     for values in ranges:
-        x = int(values.split('-')[0].strip()) - 1
-        y = int(values.split('-')[1].strip())
-        param_indexes.extend(list(range(x, y)))
+        if '-' in values:
+            x = int(values.split('-')[0].strip()) - 1
+            y = int(values.split('-')[1].strip())
+            param_indexes.extend(list(range(x, y)))
+        else:
+            param_indexes.append(int(values) -1 )
     return param_indexes
 
 
