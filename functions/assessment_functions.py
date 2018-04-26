@@ -1,7 +1,7 @@
 from sys import argv
 import os
 import pandas as pd
-# from ggplot import *
+from ggplot import *
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set(color_codes=True, style="ticks")
@@ -264,3 +264,138 @@ def plot_joint_mtpltlb(joint_NEA_NWA_df, df_chrs_reformat):
     plt.ylim(min(NEA), max(NEA))
     plt.show()
     return
+
+
+def create_combined_df(file_name):
+    combined_df = pd.read_csv(file_name, sep='\t')
+    combined_df['obs_str'] = combined_df['obs'].astype(str)
+    if 'chr' in combined_df:
+        combined_df['chr_str'] = combined_df['chr'].astype(str)
+    else:
+        combined_df['chr'] = 0
+        combined_df['chr_str'] = combined_df['chr'].astype(str)
+    return combined_df
+
+
+def calc_estimate_dist(param, combined_PosteriorCharacteristics_observed_df):
+    estimate = '{}_mode'.format(param)
+    estimate_dist_name = '{}_estimate_dist'.format(param)
+    combined_PosteriorCharacteristics_observed_df[estimate_dist_name] = (combined_PosteriorCharacteristics_observed_df[estimate] - combined_PosteriorCharacteristics_observed_df[param])**2
+    combined_PosteriorCharacteristics_observed_df.head()
+    return combined_PosteriorCharacteristics_observed_df
+
+
+def calc_HPDI_dist(param, combined_PosteriorCharacteristics_observed_df):
+    HDI95_upper_name = '{}_HDI95_upper'.format(param)
+    HDI95_lower_name = '{}_HDI95_lower'.format(param)
+    HPDI_dist_name = '{}_HPDI_dist'.format(param)
+    HDI95_upper = combined_PosteriorCharacteristics_observed_df[HDI95_upper_name]
+    HDI95_lower = combined_PosteriorCharacteristics_observed_df[HDI95_lower_name]
+    true = combined_PosteriorCharacteristics_observed_df[param]
+    
+    combined_PosteriorCharacteristics_observed_df[HPDI_dist_name] = np.where((true < HDI95_lower) & (true > HDI95_upper), ((true - HDI95_lower)**2 + (true - HDI95_upper)**2)*(-1), (true - HDI95_lower)**2 + (true - HDI95_upper)**2)    
+    return combined_PosteriorCharacteristics_observed_df
+
+
+def calc_estimate_ratio(param, combined_PosteriorCharacteristics_observed_df):
+    ratio_name = '{}_estimate_ratio'.format(param)
+    estimate = '{}_mode'.format(param)
+    combined_PosteriorCharacteristics_observed_df[ratio_name] = combined_PosteriorCharacteristics_observed_df[estimate]/combined_PosteriorCharacteristics_observed_df[param]
+    return combined_PosteriorCharacteristics_observed_df
+
+
+def calc_HPDI_ratio(param, combined_PosteriorCharacteristics_observed_df):
+    ratio_upper_name = '{}_HPDI95_upper_ratio'.format(param)
+    ratio_lower_name = '{}_HPDI95_lower_ratio'.format(param)
+    dist_ratio_name = '{}_HPDI95_dist_ratio'.format(param)
+    HDI95_upper_name = '{}_HDI95_upper'.format(param)
+    HDI95_lower_name = '{}_HDI95_lower'.format(param)
+    combined_PosteriorCharacteristics_observed_df[ratio_upper_name] = combined_PosteriorCharacteristics_observed_df[HDI95_upper_name]/combined_PosteriorCharacteristics_observed_df[param]
+    combined_PosteriorCharacteristics_observed_df[ratio_lower_name] = combined_PosteriorCharacteristics_observed_df[HDI95_lower_name]/combined_PosteriorCharacteristics_observed_df[param]
+    combined_PosteriorCharacteristics_observed_df[dist_ratio_name] = combined_PosteriorCharacteristics_observed_df[ratio_upper_name] - combined_PosteriorCharacteristics_observed_df[ratio_lower_name]
+    return combined_PosteriorCharacteristics_observed_df
+
+
+def proportion_smaller_chr1(df, dist_column, chrom, param):
+    proportion_smaller_dict = {}
+    chr1 = df[dist_column].loc[(df['chr_str'] == '1')].reset_index(drop=True)
+    other_chr = df[dist_column].loc[(df['chr_str'] == str(chrom))].reset_index(drop=True)
+
+    proportion = (float(sum(chr1 > other_chr) - sum(chr1 < 0)))/100
+    if chrom == 'genome':
+        proportion_smaller_dict['chr'] = 0
+    else:
+        proportion_smaller_dict['chr'] = int(chrom)
+    proportion_smaller_dict['param'] = param
+    proportion_smaller_dict['proportion'] = proportion
+    return proportion_smaller_dict
+
+
+def gg_boxplot_estimate_dist(param, combined_PosteriorCharacteristics_observed_df, y_axis_name):
+    plot = ggplot(aes(x = 'chr', y = y_axis_name), data = combined_PosteriorCharacteristics_observed_df) + \
+        geom_boxplot() + \
+        theme_bw()
+    return plot
+
+
+def gg_lineplot(param, combined_PosteriorCharacteristics_observed_df, y_axis_name):
+    plot = ggplot(aes(x = 'chr', y = y_axis_name, colour='obs_str'), data = combined_PosteriorCharacteristics_observed_df) + \
+        geom_point() + \
+        geom_line() + \
+        theme_bw()
+    return plot
+
+
+def regplot(y_axis_name, df):
+    plot = sns.lmplot(x="chr", y=y_axis_name, 
+               size=5, 
+               data=df, 
+               lowess=True)
+    return plot
+
+
+def gg_distribution_plot(param, combined_PosteriorCharacteristics_observed_df, x_axis_name):
+    plot = ggplot(aes(x = x_axis_name, colour='factor(chr)'), data = combined_PosteriorCharacteristics_observed_df) + \
+        geom_density() + \
+        geom_vline(x = 1) + \
+        scale_color_brewer(type='div', palette=2) + \
+        theme_bw()
+    return plot
+
+
+def gg_density_plot(param, PosteriorDensities_df, true_value):
+    density = list(PosteriorDensities_obs1_df)[PosteriorDensities_obs1_df.columns.get_loc(param)+1]
+    plot = ggplot(aes(x = param, y = density, colour = 'chr_str'), data = PosteriorDensities_df) + \
+        geom_line(size = 2) + \
+        geom_vline(x = true_value, size = 3, colour = 'black') + \
+        scale_color_brewer(type='div', palette=2) + \
+        theme_bw()
+    return plot
+
+
+def gg_lineplot2(df):
+    plot = ggplot(aes(x = 'chr', y = 'proportion', colour='param'), data = df) + \
+        geom_point() + \
+        geom_line(size = 2) + \
+        geom_hline(y = 0.5, linetype = 'dashed', color = 'black', size = 2) + \
+        ylim(0,1) + \
+        scale_color_brewer(type='div', palette=2) + \
+        theme_bw()
+    return plot
+
+
+def calc_confusion_matrix(df, chrom, prob):
+    confusion = {}
+    act_B_ls_C = df['B-C'] < 0
+    act_B_gr_C = df['B-C'] > 0
+    pred_B_gr_C = df['B_C_prob'] > prob
+    pred_B_ls_C = df['B_C_prob'] < 1 - prob
+        
+    confusion['act_B_ls_C_pred_B_gr_C'] = len(df[(df.chr == chrom) & act_B_ls_C  & pred_B_gr_C])
+    confusion['act_B_ls_C_pred_B_ls_C'] = len(df[(df.chr == chrom) & act_B_ls_C  & pred_B_ls_C])
+    confusion['act_B_gr_C_pred_B_gr_C'] = len(df[(df.chr == chrom) & act_B_gr_C  & pred_B_gr_C])
+    confusion['act_B_gr_C_pred_B_ls_C'] = len(df[(df.chr == chrom) & act_B_gr_C  & pred_B_ls_C])   
+    confusion['chr'] = chrom
+    confusion['prob'] = str(prob)
+        
+    return confusion
