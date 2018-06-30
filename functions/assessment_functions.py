@@ -208,7 +208,10 @@ def plot_param_densities(posterior, truncated, prior, df_chrs_reformat, param):
     HDI90_lower = float(df_chrs_reformat['HDI90_lower'].loc[df_chrs_reformat['param'] == param])
     HDI90_upper = float(df_chrs_reformat['HDI90_upper'].loc[df_chrs_reformat['param'] == param])
 
-    plt.figure()
+
+    sns.set(font_scale=3)
+    sns.set_style("white")
+    plt.figure(figsize=(10,6))
     plt.xlabel(param);
     plt.plot(posterior[param], posterior['{}.density'.format(param)], label='posterior');
     sns.kdeplot(truncated[param], label='truncated prior');
